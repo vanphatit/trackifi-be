@@ -1,0 +1,24 @@
+{
+    "development": {
+        "username": "root",
+        "password": "123456",
+        "database": "trackifi_dev",
+        "host": "127.0.0.1",
+        "dialect": "mysql",
+        "logging": false
+    },
+    "test": {
+        "username": "root",
+        "password": null,
+        "database": "trackifi_test",
+        "host": "127.0.0.1",
+        "dialect": "mysql"
+    },
+    "production": {
+        "username": "root",
+        "password": null,
+        "database": "trackifi_prod",
+        "host": "127.0.0.1",
+        "dialect": "mysql"
+    }
+}
