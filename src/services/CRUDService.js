@@ -1,73 +1,57 @@
-import bcrypt from "bcryptjs"; // import thư viện bcryptjs
-import db from "../models/index"; // import database
-import { where } from "sequelize";
-const salt = bcrypt.genSaltSync(10); // thuật toán hash password
+import User from "../models/User.js"; // import User model
 
 let createNewUser = async (data) => {
-  // hàm tạo user với tham số data
   return new Promise(async (resolve, reject) => {
-    // dùng Promise đảm bảo luôn trả kết quả trong xử lý bất đồng bộ
     try {
-      let hashPasswordFromBcrypt = await hashUserPassword(data.password);
-      await db.User.create({
+      // Check if user already exists
+      const existingUser = await User.findByEmail(data.email);
+      if (existingUser) {
+        reject(new Error("User with this email already exists"));
+        return;
+      }
+
+      // Create new user (password will be hashed automatically by pre-save middleware)
+      const newUser = new User({
         email: data.email,
-        password: hashPasswordFromBcrypt,
+        password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
         address: data.address,
         phoneNumber: data.phoneNumber,
         gender: data.gender === "1" ? true : false,
         roleId: data.roleId,
+        positionId: data.positionId,
       });
+
+      await newUser.save();
       resolve("OK create a new user successful!");
-      // console.log('data from service');
-      // console.log(data); // log dữ liệu từ biến data
-      // console.log(hashPasswordFromBcrypt);
     } catch (e) {
       reject(e);
     }
   });
 };
 
-let hashUserPassword = (password) => {
-  return new Promise(async (resolve, reject) => {
-    // dùng Promise đảm bảo luôn trả kết quả trong xử lý bất đồng bộ
-    try {
-      let hashPassword = await bcrypt.hashSync("B4c0//", salt);
-      resolve(hashPassword);
-    } catch (e) {
-      reject(e);
-    }
-  });
-};
-
-// lấy tất cả findAll CRUD
+// Get all users
 let getAllUser = () => {
   return new Promise(async (resolve, reject) => {
-    // dùng Promise đảm bảo luôn trả kết quả trong xử lý bất đồng bộ
     try {
-      let users = db.User.findAll({
-        raw: true, // hiển dữ liệu gốc
-      });
-      resolve(users); // hàm trả về kết quả
+      let users = await User.find({}).lean(); // .lean() returns plain JavaScript objects
+      resolve(users);
     } catch (e) {
       reject(e);
     }
   });
 };
 
-// lấy findOne CRUD
+// Get user by ID
 let getUserInfoById = (userId) => {
-  return new Promise(async (resolve, reject) => { // dùng Promise đảm bảo luôn trả kết quả trong xử lý bất đồng bộ
+  return new Promise(async (resolve, reject) => {
     try {
-      let user = await db.User.findOne({
-        where: { id: userId }, // query điều kiện cho tham số
-        raw: true
-      });
+      let user = await User.findById(userId).lean();
       if (user) {
-        resolve(user); // hàm trả về kết quả
+        resolve(user);
       } else {
-        resolve([]); // hàm trả về kết quả rỗng
+        resolve(null);
       }
     } catch (e) {
       reject(e);
@@ -75,24 +59,22 @@ let getUserInfoById = (userId) => {
   });
 };
 
-// hàm put CRUD
+// Update user
 let updateUser = (data) => {
-  return new Promise(async (resolve, reject) => { // dùng Promise đảm bảo luôn trả kết quả trong xử lý bất đồng bộ
+  return new Promise(async (resolve, reject) => {
     try {
-      let user = await db.User.findOne({
-        where: { id: data.id } // query điều kiện cho tham số
-      });
+      let user = await User.findById(data.id);
       if (user) {
         user.firstName = data.firstName;
         user.lastName = data.lastName;
         user.address = data.address;
         await user.save();
 
-        // lấy danh sách user
-        let allusers = await db.User.findAll();
-        resolve(allusers);
+        // Get all users after update
+        let allUsers = await User.find({}).lean();
+        resolve(allUsers);
       } else {
-        resolve(); // hàm trả về kết quả rỗng
+        resolve(null);
       }
     } catch (e) {
       reject(e);
@@ -100,27 +82,22 @@ let updateUser = (data) => {
   });
 };
 
-// hàm xóa user
+// Delete user by ID
 let deleteUserById = (userId) => {
-  return new Promise(async (resolve, reject) => { // dùng Promise đảm bảo luôn trả kết quả trong xử lý bất đồng bộ
+  return new Promise(async (resolve, reject) => {
     try {
-      let user = await db.User.findOne({
-        where: { id: userId }
-      });
-      if (user) {
-        user.destroy();
-      }
-      resolve(); // là return
+      await User.findByIdAndDelete(userId);
+      resolve("User deleted successfully");
     } catch (e) {
       reject(e);
     }
   });
 };
 
-module.exports = { // xuất hàm ra bên ngoài
+module.exports = {
   createNewUser: createNewUser,
   getAllUser: getAllUser,
   getUserInfoById: getUserInfoById,
   updateUser: updateUser,
-  deleteUserById: deleteUserById
+  deleteUserById: deleteUserById,
 };

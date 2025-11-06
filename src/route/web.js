@@ -1,5 +1,5 @@
 import express from "express"; // gọi Express
-import homeController from "../controller/homeController"; // gọi controller
+import homeController from "../controllers/homeController"; // gọi controller
 
 let router = express.Router(); // khởi tạo Route
 

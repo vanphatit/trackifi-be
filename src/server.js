@@ -2,7 +2,7 @@ import express from "express"; // nạp express
 import bodyParser from "body-parser"; // nạp body-parser lấy tham số từ client /user?id=7
 import viewEngine from "./config/viewEngine"; // nạp viewEngine
 import initWebRoutes from "./route/web"; // nạp file web từ Route
-import connectDB from "./config/configdb";
+import connectDB from "./config/database"; // import MongoDB connection
 require("dotenv").config(); // gọi hàm config của dotenv để chạy lệnh process.env.PORT
 
 let app = express();
@@ -13,6 +13,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 viewEngine(app);
 initWebRoutes(app);
+
+// Connect to MongoDB
 connectDB();
 
 let port = process.env.PORT || 6969; // tạo tham số port lấy từ .env

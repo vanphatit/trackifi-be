@@ -1,11 +1,10 @@
-import db from "../models/index"; // import database
+import User from "../models/User.js"; // import User model
 import CRUDService from "../services/CRUDService"; // import service
 
 // hàm getHomePage
 let getHomePage = async (req, res) => {
-  // return res.send('Nguyễn Hữu Trung');
   try {
-    let data = await db.User.findAll(); // lấy dữ liệu từ models/index
+    let data = await User.find({}); // lấy dữ liệu từ MongoDB
     console.log("-----------------------------");
     console.log(data);
     console.log("-----------------------------");
