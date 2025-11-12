@@ -1,5 +1,5 @@
 // MongoDB models index file
-import User from "./User.js";
+import User from "./User";
 
 const db = {
   User,

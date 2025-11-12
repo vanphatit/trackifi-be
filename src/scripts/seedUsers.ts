@@ -1,7 +1,8 @@
-import connectDB from "../config/database.js";
-import User from "../models/User.js";
+import connectDB from "../config/database";
+import User from "../models/User";
+import { IUser } from "../types/User";
 
-const seedUsers = async () => {
+const seedUsers = async (): Promise<void> => {
   try {
     // Connect to database
     await connectDB();
@@ -10,7 +11,7 @@ const seedUsers = async () => {
     await User.deleteMany({});
 
     // Create sample users
-    const users = [
+    const users: Partial<IUser>[] = [
       {
         email: "admin@trackifi.com",
         password: "admin123",

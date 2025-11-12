@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
-require("dotenv").config();
+import dotenv from "dotenv";
 
-const connectDB = async () => {
+dotenv.config();
+
+const connectDB = async (): Promise<void> => {
   try {
-    const mongoURI =
+    const mongoURI: string =
       process.env.MONGODB_URI || "mongodb://localhost:27017/trackifi_dev";
 
     await mongoose.connect(mongoURI);

@@ -1,7 +1,11 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcryptjs";
+import { IUser, IUserMethods, IUserStatics } from "../types/User";
 
-const userSchema = new mongoose.Schema(
+type UserDocument = Document & IUser & IUserMethods;
+type UserModel = Model<UserDocument> & IUserStatics;
+
+const userSchema = new Schema<UserDocument>(
   {
     email: {
       type: String,
@@ -56,7 +60,7 @@ const userSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
+userSchema.pre<UserDocument>("save", async function (next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified("password")) return next();
 
@@ -66,12 +70,15 @@ userSchema.pre("save", async function (next) {
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
-    next(error);
+    next(error as Error);
   }
 });
 
 // Instance method to check password
-userSchema.methods.comparePassword = async function (candidatePassword) {
+userSchema.methods.comparePassword = async function (
+  this: UserDocument,
+  candidatePassword: string
+): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -80,15 +87,16 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 // Instance method to get full name
-userSchema.methods.getFullName = function () {
+userSchema.methods.getFullName = function (this: UserDocument): string {
   return `${this.firstName} ${this.lastName}`;
 };
 
 // Static method to find user by email
-userSchema.statics.findByEmail = function (email) {
+userSchema.static("findByEmail", function (email: string) {
   return this.findOne({ email: email.toLowerCase() });
-};
+});
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model<UserDocument, UserModel>("User", userSchema);
 
 export default User;
+export { UserDocument, UserModel };

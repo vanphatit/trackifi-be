@@ -1,6 +1,7 @@
-import User from "../models/User.js"; // import User model
+import User, { UserDocument } from "../models/User";
+import { IUser, IUserCreateInput, IUserUpdateInput } from "../types/User";
 
-let createNewUser = async (data) => {
+const createNewUser = async (data: IUserCreateInput): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
       // Check if user already exists
@@ -32,11 +33,11 @@ let createNewUser = async (data) => {
 };
 
 // Get all users
-let getAllUser = () => {
+const getAllUser = (): Promise<IUser[]> => {
   return new Promise(async (resolve, reject) => {
     try {
-      let users = await User.find({}).lean(); // .lean() returns plain JavaScript objects
-      resolve(users);
+      const users = await User.find({}).lean();
+      resolve(users as unknown as IUser[]);
     } catch (e) {
       reject(e);
     }
@@ -44,12 +45,12 @@ let getAllUser = () => {
 };
 
 // Get user by ID
-let getUserInfoById = (userId) => {
+const getUserInfoById = (userId: string): Promise<IUser | null> => {
   return new Promise(async (resolve, reject) => {
     try {
-      let user = await User.findById(userId).lean();
+      const user = await User.findById(userId).lean();
       if (user) {
-        resolve(user);
+        resolve(user as unknown as IUser);
       } else {
         resolve(null);
       }
@@ -60,10 +61,10 @@ let getUserInfoById = (userId) => {
 };
 
 // Update user
-let updateUser = (data) => {
+const updateUser = (data: IUserUpdateInput): Promise<IUser[] | null> => {
   return new Promise(async (resolve, reject) => {
     try {
-      let user = await User.findById(data.id);
+      const user = await User.findById(data.id);
       if (user) {
         user.firstName = data.firstName;
         user.lastName = data.lastName;
@@ -71,8 +72,8 @@ let updateUser = (data) => {
         await user.save();
 
         // Get all users after update
-        let allUsers = await User.find({}).lean();
-        resolve(allUsers);
+        const allUsers = await User.find({}).lean();
+        resolve(allUsers as unknown as IUser[]);
       } else {
         resolve(null);
       }
@@ -83,7 +84,7 @@ let updateUser = (data) => {
 };
 
 // Delete user by ID
-let deleteUserById = (userId) => {
+const deleteUserById = (userId: string): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
       await User.findByIdAndDelete(userId);
@@ -94,10 +95,10 @@ let deleteUserById = (userId) => {
   });
 };
 
-module.exports = {
-  createNewUser: createNewUser,
-  getAllUser: getAllUser,
-  getUserInfoById: getUserInfoById,
-  updateUser: updateUser,
-  deleteUserById: deleteUserById,
+export {
+  createNewUser,
+  getAllUser,
+  getUserInfoById,
+  updateUser,
+  deleteUserById,
 };
