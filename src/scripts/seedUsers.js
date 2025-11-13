@@ -7,7 +7,7 @@ const seedUsers = async () => {
     await connectDB();
 
     // Clear existing users
-    await User.deleteMany({});
+    await User.destroy({ where: {}, truncate: true });
 
     // Create sample users
     const users = [
@@ -21,6 +21,7 @@ const seedUsers = async () => {
         gender: true,
         roleId: "admin",
         positionId: "manager",
+        isEmailVerified: true,
       },
       {
         email: "user@trackifi.com",
@@ -32,17 +33,31 @@ const seedUsers = async () => {
         gender: false,
         roleId: "user",
         positionId: "employee",
+        isEmailVerified: true,
+      },
+      {
+        email: "test@trackifi.com",
+        password: "test123",
+        firstName: "Test",
+        lastName: "User",
+        address: "789 Test Road",
+        phoneNumber: "+1122334455",
+        gender: true,
+        roleId: "user",
+        positionId: "developer",
+        isEmailVerified: false,
       },
     ];
 
-    // Insert users
-    for (const userData of users) {
-      const user = new User(userData);
-      await user.save();
-      console.log(`Created user: ${user.email}`);
-    }
+    // Insert users using Sequelize
+    const createdUsers = await User.bulkCreate(users);
+
+    createdUsers.forEach((user) => {
+      console.log(`Created user: ${user.email} (ID: ${user.id})`);
+    });
 
     console.log("Seed data created successfully!");
+    console.log(`Total users created: ${createdUsers.length}`);
     process.exit(0);
   } catch (error) {
     console.error("Error seeding data:", error);

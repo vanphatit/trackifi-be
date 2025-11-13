@@ -10,8 +10,8 @@ let createNewUser = async (data) => {
         return;
       }
 
-      // Create new user (password will be hashed automatically by pre-save middleware)
-      const newUser = new User({
+      // Create new user (password will be hashed automatically by beforeSave hook)
+      const newUser = await User.create({
         email: data.email,
         password: data.password,
         firstName: data.firstName,
@@ -23,7 +23,6 @@ let createNewUser = async (data) => {
         positionId: data.positionId,
       });
 
-      await newUser.save();
       resolve("OK create a new user successful!");
     } catch (e) {
       reject(e);
@@ -35,7 +34,16 @@ let createNewUser = async (data) => {
 let getAllUser = () => {
   return new Promise(async (resolve, reject) => {
     try {
-      let users = await User.find({}).lean(); // .lean() returns plain JavaScript objects
+      let users = await User.findAll({
+        attributes: {
+          exclude: [
+            "password",
+            "refreshToken",
+            "emailVerificationToken",
+            "passwordResetToken",
+          ],
+        },
+      });
       resolve(users);
     } catch (e) {
       reject(e);
@@ -47,7 +55,16 @@ let getAllUser = () => {
 let getUserInfoById = (userId) => {
   return new Promise(async (resolve, reject) => {
     try {
-      let user = await User.findById(userId).lean();
+      let user = await User.findByPk(userId, {
+        attributes: {
+          exclude: [
+            "password",
+            "refreshToken",
+            "emailVerificationToken",
+            "passwordResetToken",
+          ],
+        },
+      });
       if (user) {
         resolve(user);
       } else {
@@ -63,15 +80,25 @@ let getUserInfoById = (userId) => {
 let updateUser = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      let user = await User.findById(data.id);
+      let user = await User.findByPk(data.id);
       if (user) {
-        user.firstName = data.firstName;
-        user.lastName = data.lastName;
-        user.address = data.address;
-        await user.save();
+        await user.update({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          address: data.address,
+        });
 
         // Get all users after update
-        let allUsers = await User.find({}).lean();
+        let allUsers = await User.findAll({
+          attributes: {
+            exclude: [
+              "password",
+              "refreshToken",
+              "emailVerificationToken",
+              "passwordResetToken",
+            ],
+          },
+        });
         resolve(allUsers);
       } else {
         resolve(null);
@@ -86,7 +113,7 @@ let updateUser = (data) => {
 let deleteUserById = (userId) => {
   return new Promise(async (resolve, reject) => {
     try {
-      await User.findByIdAndDelete(userId);
+      await User.destroy({ where: { id: userId } });
       resolve("User deleted successfully");
     } catch (e) {
       reject(e);

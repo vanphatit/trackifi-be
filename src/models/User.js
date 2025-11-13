@@ -1,77 +1,121 @@
-import mongoose from "mongoose";
+import { DataTypes } from "sequelize";
 import bcrypt from "bcryptjs";
+import { sequelize } from "../config/database.js";
 
-const userSchema = new mongoose.Schema(
+const User = sequelize.define(
+  "User",
   {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
     email: {
-      type: String,
-      required: true,
+      type: DataTypes.STRING,
+      allowNull: false,
       unique: true,
-      lowercase: true,
-      trim: true,
+      validate: {
+        isEmail: true,
+      },
+      set(value) {
+        this.setDataValue("email", value.toLowerCase().trim());
+      },
     },
     password: {
-      type: String,
-      required: true,
-      minlength: 6,
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        len: [6, 100],
+      },
     },
     firstName: {
-      type: String,
-      required: true,
-      trim: true,
+      type: DataTypes.STRING,
+      allowNull: false,
+      set(value) {
+        this.setDataValue("firstName", value.trim());
+      },
     },
     lastName: {
-      type: String,
-      required: true,
-      trim: true,
+      type: DataTypes.STRING,
+      allowNull: false,
+      set(value) {
+        this.setDataValue("lastName", value.trim());
+      },
     },
     address: {
-      type: String,
-      trim: true,
+      type: DataTypes.TEXT,
+      allowNull: true,
+      set(value) {
+        this.setDataValue("address", value ? value.trim() : null);
+      },
     },
     phoneNumber: {
-      type: String,
-      trim: true,
+      type: DataTypes.STRING,
+      allowNull: true,
+      set(value) {
+        this.setDataValue("phoneNumber", value ? value.trim() : null);
+      },
     },
     gender: {
-      type: Boolean,
-      default: true, // true for male, false for female
+      type: DataTypes.BOOLEAN,
+      defaultValue: true, // true for male, false for female
     },
     image: {
-      type: String,
-      default: null,
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     roleId: {
-      type: String,
-      default: "user",
+      type: DataTypes.STRING,
+      defaultValue: "user",
     },
     positionId: {
-      type: String,
-      default: null,
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    isEmailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    emailVerificationToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    passwordResetToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    passwordResetExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    refreshToken: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
   },
   {
-    timestamps: true, // This will add createdAt and updatedAt fields automatically
+    timestamps: true, // tự động thêm createdAt và updatedAt
+    tableName: "users",
+    indexes: [
+      {
+        unique: true,
+        fields: ["email"],
+      },
+    ],
+    hooks: {
+      // Hash password trước khi lưu
+      beforeSave: async (user, options) => {
+        if (user.changed("password")) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      },
+    },
   }
 );
 
-// Hash password before saving
-userSchema.pre("save", async function (next) {
-  // Only hash the password if it has been modified (or is new)
-  if (!this.isModified("password")) return next();
-
-  try {
-    // Hash password with cost of 10
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Instance method to check password
-userSchema.methods.comparePassword = async function (candidatePassword) {
+// Instance method để kiểm tra password
+User.prototype.comparePassword = async function (candidatePassword) {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -79,16 +123,14 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   }
 };
 
-// Instance method to get full name
-userSchema.methods.getFullName = function () {
+// Instance method để lấy full name
+User.prototype.getFullName = function () {
   return `${this.firstName} ${this.lastName}`;
 };
 
-// Static method to find user by email
-userSchema.statics.findByEmail = function (email) {
-  return this.findOne({ email: email.toLowerCase() });
+// Static method để tìm user theo email
+User.findByEmail = function (email) {
+  return this.findOne({ where: { email: email.toLowerCase() } });
 };
-
-const User = mongoose.model("User", userSchema);
 
 export default User;
