@@ -10,7 +10,7 @@
     "test": "chmod +x run_tests.sh && ./run_tests.sh",
     "test:postman": "echo \"Import postman_collection.json and postman_environment.json into Postman to run interactive tests\"",
     "start": "nodemon --exec babel-node src/server.js",
-    "seed": "babel-node src/scripts/seedUsers.js"
+    "seed": "babel-node src/scripts/seedData.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -5,6 +5,7 @@ import cors from "cors"; // nạp cors để xử lý CORS
 import viewEngine from "./config/viewEngine"; // nạp viewEngine
 import initWebRoutes from "./route/web"; // nạp file web từ Route
 import connectDB from "./config/database"; // import MySQL connection
+import "./models/index.js"; // ensure Sequelize associations are registered
 require("dotenv").config(); // gọi hàm config của dotenv để chạy lệnh process.env.PORT
 
 let app = express();

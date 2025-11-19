@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
 import { ROLES } from "../constants/roles.js";
+import { slugify } from "../utils/slugify.js";
 
 const seedData = async () => {
   try {
@@ -51,23 +52,27 @@ const seedData = async () => {
     await User.bulkCreate(users, { individualHooks: true });
     console.log(`Seeded ${users.length} users`);
 
-    const categories = await Category.bulkCreate(
-      [
-        {
-          name: "Gaming Laptops",
-          description: "Laptop cấu hình cao cho game thủ và nhà sáng tạo.",
-        },
-        {
-          name: "Ultrabook & Office",
-          description: "Nhẹ, mỏng, phù hợp văn phòng và di chuyển.",
-        },
-        {
-          name: "Workstation",
-          description: "Máy trạm di động cho nhu cầu đồ họa nặng.",
-        },
-      ],
-      { returning: true }
-    );
+    const categoriesData = [
+      {
+        name: "Gaming Laptops",
+        description: "Laptop cấu hình cao cho game thủ và nhà sáng tạo.",
+      },
+      {
+        name: "Ultrabook & Office",
+        description: "Nhẹ, mỏng, phù hợp văn phòng và di chuyển.",
+      },
+      {
+        name: "Workstation",
+        description: "Máy trạm di động cho nhu cầu đồ họa nặng.",
+      },
+    ].map((category) => ({
+      ...category,
+      slug: slugify(category.name),
+    }));
+
+    const categories = await Category.bulkCreate(categoriesData, {
+      returning: true,
+    });
 
     console.log(`Seeded ${categories.length} categories`);
 
@@ -146,7 +151,11 @@ const seedData = async () => {
         ],
         categoryId: categoryMap["workstation"],
       },
-    ];
+    ].map((product, index) => ({
+      ...product,
+      slug: slugify(product.name),
+      sku: `LAP-SEED-${index + 1}`,
+    }));
 
     await Product.bulkCreate(products);
     console.log(`Seeded ${products.length} products`);

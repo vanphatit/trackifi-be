@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, fn, col, where as sequelizeWhere } from "sequelize";
 import validator from "validator";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
@@ -41,6 +41,13 @@ const normalizeImages = (images = []) => {
   return images
     .filter((item) => typeof item === "string" && item.trim().length > 0)
     .map((url) => url.trim());
+};
+
+const buildCaseInsensitiveLike = (column, value) => {
+  const normalizedValue = value.toLowerCase();
+  return sequelizeWhere(fn("LOWER", col(column)), {
+    [Op.like]: `%${normalizedValue}%`,
+  });
 };
 
 const normalizeBoolean = (value, defaultValue) => {
@@ -215,14 +222,17 @@ const getProducts = async (req, res) => {
     }
 
     if (search) {
+      const term = search.trim().toLowerCase();
       where[Op.or] = [
-        { name: { [Op.like]: `%${search}%` } },
-        { brand: { [Op.like]: `%${search}%` } },
+        buildCaseInsensitiveLike("Product.name", term),
+        buildCaseInsensitiveLike("Product.brand", term),
       ];
     }
 
     if (brand) {
-      where.brand = { [Op.like]: `%${brand}%` };
+      const brandTerm = brand.trim().toLowerCase();
+      where[Op.and] = where[Op.and] || [];
+      where[Op.and].push(buildCaseInsensitiveLike("Product.brand", brandTerm));
     }
 
     if (category) {
