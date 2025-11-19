@@ -1,12 +1,21 @@
 import express from "express"; // gọi Express
 import homeController from "../controllers/homeController"; // gọi controller
 import authController from "../controllers/authController"; // gọi auth controller
-import { authenticateToken } from "../middleware/auth"; // gọi auth middleware
+import productController from "../controllers/productController";
+import categoryController from "../controllers/categoryController";
+import orderController from "../controllers/orderController";
+import userController from "../controllers/userController";
+import {
+  authenticateToken,
+  requireRole,
+  optionalAuth,
+} from "../middleware/auth"; // gọi auth middleware
 import {
   authLimiter,
   forgotPasswordLimiter,
   generalLimiter,
 } from "../middleware/rateLimiter"; // gọi rate limiter
+import { ROLES } from "../constants/roles.js";
 
 let router = express.Router(); // khởi tạo Route
 
@@ -37,6 +46,105 @@ let initWebRoutes = (app) => {
     "/api/user/profile",
     authenticateToken,
     authController.updateProfile
+  );
+
+  // Category routes
+  router.get(
+    "/api/categories",
+    optionalAuth,
+    categoryController.getCategories
+  );
+  router.post(
+    "/api/categories",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    categoryController.createCategory
+  );
+  router.put(
+    "/api/categories/:categoryId",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    categoryController.updateCategory
+  );
+  router.delete(
+    "/api/categories/:categoryId",
+    authenticateToken,
+    requireRole([ROLES.ADMIN]),
+    categoryController.deleteCategory
+  );
+
+  // Product routes
+  router.get(
+    "/api/products",
+    optionalAuth,
+    productController.getProducts
+  );
+  router.get(
+    "/api/products/:productId",
+    optionalAuth,
+    productController.getProductById
+  );
+  router.post(
+    "/api/products",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    productController.createProduct
+  );
+  router.put(
+    "/api/products/:productId",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    productController.updateProduct
+  );
+  router.delete(
+    "/api/products/:productId",
+    authenticateToken,
+    requireRole([ROLES.ADMIN]),
+    productController.deleteProduct
+  );
+
+  // Order routes
+  router.post(
+    "/api/orders",
+    authenticateToken,
+    requireRole([ROLES.CUSTOMER, ROLES.ADMIN, ROLES.SUPPORTER]),
+    orderController.createOrder
+  );
+  router.get(
+    "/api/orders/my",
+    authenticateToken,
+    orderController.getMyOrders
+  );
+  router.get(
+    "/api/orders",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    orderController.getAllOrders
+  );
+  router.get(
+    "/api/orders/:orderId",
+    authenticateToken,
+    orderController.getOrderDetail
+  );
+  router.patch(
+    "/api/orders/:orderId/status",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    orderController.updateOrderStatus
+  );
+
+  // User management routes
+  router.get(
+    "/api/admin/users",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    userController.listUsers
+  );
+  router.patch(
+    "/api/admin/users/:userId/role",
+    authenticateToken,
+    requireRole([ROLES.ADMIN]),
+    userController.updateUserRole
   );
 
   // Legacy routes (giữ lại để tương thích)

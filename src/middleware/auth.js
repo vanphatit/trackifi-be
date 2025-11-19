@@ -34,7 +34,7 @@ const authenticateToken = async (req, res, next) => {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      roleId: user.roleId,
+      roleId: user.roleId?.toUpperCase(),
     };
 
     next();
@@ -103,7 +103,7 @@ const optionalAuth = async (req, res, next) => {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          roleId: user.roleId,
+          roleId: user.roleId?.toUpperCase(),
         };
       }
     }
@@ -115,8 +115,4 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  authenticateToken,
-  requireRole,
-  optionalAuth,
-};
+export { authenticateToken, requireRole, optionalAuth };

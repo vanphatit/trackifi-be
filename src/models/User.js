@@ -1,6 +1,7 @@
 import { DataTypes } from "sequelize";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/database.js";
+import { DEFAULT_ROLE, ROLE_LIST } from "../constants/roles.js";
 
 const User = sequelize.define(
   "User",
@@ -13,7 +14,6 @@ const User = sequelize.define(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
       validate: {
         isEmail: true,
       },
@@ -65,8 +65,16 @@ const User = sequelize.define(
       allowNull: true,
     },
     roleId: {
-      type: DataTypes.STRING,
-      defaultValue: "user",
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: DEFAULT_ROLE,
+      validate: {
+        isIn: [ROLE_LIST],
+      },
+      set(value) {
+        const normalized = (value || DEFAULT_ROLE).toUpperCase();
+        this.setDataValue("roleId", normalized);
+      },
     },
     positionId: {
       type: DataTypes.STRING,

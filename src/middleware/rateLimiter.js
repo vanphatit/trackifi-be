@@ -40,8 +40,4 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = {
-  authLimiter,
-  forgotPasswordLimiter,
-  generalLimiter,
-};
+export { authLimiter, forgotPasswordLimiter, generalLimiter };

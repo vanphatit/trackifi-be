@@ -6,7 +6,6 @@ import {
   getRefreshTokenCookieOptions,
 } from "../utils/jwtUtils.js";
 import validator from "validator";
-import crypto from "crypto";
 
 // Register API
 const register = async (req, res) => {
@@ -69,10 +68,11 @@ const register = async (req, res) => {
     });
 
     // Tạo tokens
+    const normalizedRole = user.roleId?.toUpperCase();
     const tokenPayload = {
       userId: user.id,
       email: user.email,
-      roleId: user.roleId,
+      roleId: normalizedRole,
     };
 
     const { accessToken, refreshToken } = generateTokenPair(tokenPayload);
@@ -92,7 +92,7 @@ const register = async (req, res) => {
       phoneNumber: user.phoneNumber,
       gender: user.gender,
       address: user.address,
-      roleId: user.roleId,
+      roleId: normalizedRole,
       isEmailVerified: user.isEmailVerified,
       createdAt: user.createdAt,
     };
@@ -150,10 +150,11 @@ const login = async (req, res) => {
     }
 
     // Tạo tokens
+    const normalizedRole = user.roleId?.toUpperCase();
     const tokenPayload = {
       userId: user.id,
       email: user.email,
-      roleId: user.roleId,
+      roleId: normalizedRole,
     };
 
     const { accessToken, refreshToken } = generateTokenPair(tokenPayload);
@@ -173,7 +174,7 @@ const login = async (req, res) => {
       phoneNumber: user.phoneNumber,
       gender: user.gender,
       address: user.address,
-      roleId: user.roleId,
+      roleId: normalizedRole,
       isEmailVerified: user.isEmailVerified,
       createdAt: user.createdAt,
     };
@@ -223,10 +224,11 @@ const refreshToken = async (req, res) => {
     }
 
     // Tạo tokens mới
+    const normalizedRole = user.roleId?.toUpperCase();
     const tokenPayload = {
       userId: user.id,
       email: user.email,
-      roleId: user.roleId,
+      roleId: normalizedRole,
     };
 
     const { accessToken, refreshToken: newRefreshToken } =
@@ -511,7 +513,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = {
+const authController = {
   register,
   login,
   refreshToken,
@@ -521,3 +523,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
 };
+
+export default authController;

@@ -82,7 +82,7 @@ const getRefreshTokenCookieOptions = () => {
   };
 };
 
-module.exports = {
+export {
   generateAccessToken,
   generateRefreshToken,
   verifyAccessToken,
