@@ -6,6 +6,7 @@ import viewEngine from "./config/viewEngine"; // nạp viewEngine
 import initWebRoutes from "./route/web"; // nạp file web từ Route
 import connectDB from "./config/database"; // import MySQL connection
 import "./models/index.js"; // ensure Sequelize associations are registered
+import { testConnection } from "./config/elasticsearch.js"; // import Elasticsearch connection
 require("dotenv").config(); // gọi hàm config của dotenv để chạy lệnh process.env.PORT
 
 let app = express();
@@ -64,6 +65,18 @@ app.use((req, res) => {
 
 // Connect to MySQL
 connectDB();
+
+// Test Elasticsearch connection (optional)
+testConnection().then((connected) => {
+  if (connected) {
+    console.log("🔍 Search features available");
+  } else {
+    console.log("⚠️  Search features disabled (Elasticsearch not available)");
+    console.log(
+      "   To enable search: docker run -d -p 9200:9200 -e 'discovery.type=single-node' elasticsearch:8.11.0"
+    );
+  }
+});
 
 let port = process.env.PORT || 6969; // tạo tham số port lấy từ .env
 // Port === undefined => port = 6969

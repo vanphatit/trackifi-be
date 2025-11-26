@@ -10,9 +10,12 @@
     "test": "chmod +x run_tests.sh && ./run_tests.sh",
     "test:postman": "echo \"Import postman_collection.json and postman_environment.json into Postman to run interactive tests\"",
     "start": "nodemon --exec babel-node src/server.js",
-    "seed": "babel-node src/scripts/seedData.js"
+    "seed": "babel-node src/scripts/seedData.js",
+    "es:setup": "babel-node src/scripts/setupElasticsearch.js",
+    "es:reindex": "babel-node src/scripts/reindexProducts.js"
   },
   "dependencies": {
+    "@elastic/elasticsearch": "^8.15.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",

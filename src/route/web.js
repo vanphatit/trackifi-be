@@ -5,6 +5,7 @@ import productController from "../controllers/productController";
 import categoryController from "../controllers/categoryController";
 import orderController from "../controllers/orderController";
 import userController from "../controllers/userController";
+import searchController from "../controllers/searchController";
 import {
   authenticateToken,
   requireRole,
@@ -15,6 +16,7 @@ import {
   forgotPasswordLimiter,
   generalLimiter,
 } from "../middleware/rateLimiter"; // gọi rate limiter
+import { syncProductToElasticsearch } from "../middleware/elasticsearchSync";
 import { ROLES } from "../constants/roles.js";
 
 let router = express.Router(); // khởi tạo Route
@@ -49,11 +51,7 @@ let initWebRoutes = (app) => {
   );
 
   // Category routes
-  router.get(
-    "/api/categories",
-    optionalAuth,
-    categoryController.getCategories
-  );
+  router.get("/api/categories", optionalAuth, categoryController.getCategories);
   router.post(
     "/api/categories",
     authenticateToken,
@@ -73,12 +71,28 @@ let initWebRoutes = (app) => {
     categoryController.deleteCategory
   );
 
-  // Product routes
-  router.get(
-    "/api/products",
+  // Search routes (Elasticsearch-powered)
+  router.post(
+    "/api/search/products",
     optionalAuth,
-    productController.getProducts
+    searchController.searchProducts
   );
+  router.get(
+    "/api/search/autocomplete",
+    searchController.getAutocompleteSuggestions
+  );
+  router.get(
+    "/api/search/related/:productId",
+    searchController.getRelatedProducts
+  );
+  router.get(
+    "/api/search/popular-terms",
+    searchController.getPopularSearchTerms
+  );
+  router.get("/api/search/filters", searchController.getSearchFilters);
+
+  // Product routes
+  router.get("/api/products", optionalAuth, productController.getProducts);
   router.get(
     "/api/products/:productId",
     optionalAuth,
@@ -88,18 +102,21 @@ let initWebRoutes = (app) => {
     "/api/products",
     authenticateToken,
     requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    syncProductToElasticsearch("create"),
     productController.createProduct
   );
   router.put(
     "/api/products/:productId",
     authenticateToken,
     requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    syncProductToElasticsearch("update"),
     productController.updateProduct
   );
   router.delete(
     "/api/products/:productId",
     authenticateToken,
     requireRole([ROLES.ADMIN]),
+    syncProductToElasticsearch("delete"),
     productController.deleteProduct
   );
 
@@ -110,11 +127,7 @@ let initWebRoutes = (app) => {
     requireRole([ROLES.CUSTOMER, ROLES.ADMIN, ROLES.SUPPORTER]),
     orderController.createOrder
   );
-  router.get(
-    "/api/orders/my",
-    authenticateToken,
-    orderController.getMyOrders
-  );
+  router.get("/api/orders/my", authenticateToken, orderController.getMyOrders);
   router.get(
     "/api/orders",
     authenticateToken,

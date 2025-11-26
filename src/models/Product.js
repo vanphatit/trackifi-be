@@ -110,4 +110,12 @@ const Product = sequelize.define(
   }
 );
 
+// Associations
+Product.associate = function (models) {
+  Product.belongsTo(models.Category, {
+    foreignKey: "categoryId",
+    as: "Category",
+  });
+};
+
 export default Product;
