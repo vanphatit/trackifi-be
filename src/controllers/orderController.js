@@ -48,6 +48,7 @@ const resolveShippingFee = () => {
 const createOrder = async (req, res) => {
   try {
     const {
+      recipientName,
       shippingAddress,
       contactPhone,
       paymentMethod,
@@ -81,6 +82,14 @@ const createOrder = async (req, res) => {
         success: false,
         message: "productId và quantity phải là số nguyên hợp lệ",
         errorCode: "INVALID_ORDER_ITEM",
+      });
+    }
+
+    if (!recipientName || recipientName.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Tên người nhận phải có ít nhất 2 ký tự",
+        errorCode: "INVALID_RECIPIENT_NAME",
       });
     }
 
@@ -177,6 +186,7 @@ const createOrder = async (req, res) => {
           subtotal,
           shippingFee,
           totalAmount,
+          recipientName: recipientName.trim(),
           shippingAddress: shippingAddress.trim(),
           contactPhone: contactPhone.trim(),
           paymentMethod: normalizedPaymentMethod,

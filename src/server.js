@@ -2,11 +2,15 @@ import express from "express"; // nạp express
 import bodyParser from "body-parser"; // nạp body-parser lấy tham số từ client /user?id=7
 import cookieParser from "cookie-parser"; // nạp cookie-parser để xử lý cookies
 import cors from "cors"; // nạp cors để xử lý CORS
+import { graphqlHTTP } from "express-graphql";
 import viewEngine from "./config/viewEngine"; // nạp viewEngine
 import initWebRoutes from "./route/web"; // nạp file web từ Route
 import connectDB from "./config/database"; // import MySQL connection
 import "./models/index.js"; // ensure Sequelize associations are registered
 import { testConnection } from "./config/elasticsearch.js"; // import Elasticsearch connection
+import schema from "./graphql/schema.js";
+import { optionalAuth } from "./middleware/auth.js";
+
 require("dotenv").config(); // gọi hàm config của dotenv để chạy lệnh process.env.PORT
 
 let app = express();
@@ -31,6 +35,19 @@ app.use((req, res, next) => {
   res.setHeader("X-XSS-Protection", "1; mode=block");
   next();
 });
+
+// GraphQL Endpoint
+app.use(
+  "/graphql",
+  optionalAuth,
+  graphqlHTTP((req) => ({
+    schema: schema,
+    graphiql: true,
+    context: {
+      user: req.user,
+    },
+  }))
+);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

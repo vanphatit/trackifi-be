@@ -534,10 +534,43 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const getBestSellers = async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 20);
+
+    const products = await Product.findAll({
+      where: { isActive: true },
+      order: [["soldCount", "DESC"]],
+      limit: limit,
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["id", "name", "slug"],
+        },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Lấy danh sách sản phẩm bán chạy thành công",
+      data: products,
+    });
+  } catch (error) {
+    console.error("Get best sellers error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Không thể lấy danh sách sản phẩm bán chạy",
+      errorCode: "GET_BEST_SELLERS_ERROR",
+    });
+  }
+};
+
 export default {
   createProduct,
   getProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  getBestSellers,
 };

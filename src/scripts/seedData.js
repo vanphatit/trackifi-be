@@ -8,7 +8,13 @@ import { slugify } from "../utils/slugify.js";
 const seedData = async () => {
   try {
     await connectDB();
-    await sequelize.sync({ force: true });
+    // Drop and recreate all tables without FK conflicts during seeding
+    await sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
+    try {
+      await sequelize.sync({ force: true });
+    } finally {
+      await sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
+    }
 
     const users = [
       {

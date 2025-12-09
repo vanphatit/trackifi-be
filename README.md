@@ -91,7 +91,8 @@ trackifi-be/
 ### Prerequisites
 
 - **Node.js** 18+
-- **MySQL** 8.0+
+- **Docker** + **Docker Compose** (for the bundled MySQL container)
+- **MySQL** 8.0+ (only if you skip Docker)
 - **Elasticsearch** 8.15+ (Docker recommended)
 
 ### 1. Clone & Install
@@ -113,11 +114,11 @@ cp .env.example .env
 
 ```env
 PORT=6969
-DB_HOST=localhost
+DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_NAME=trackifi_dev
-DB_USER=root
-DB_PASSWORD=your_password
+DB_USER=trackifi
+DB_PASSWORD=trackifi
 
 # Elasticsearch Configuration
 ELASTICSEARCH_URL=http://localhost:9200
@@ -133,24 +134,25 @@ JWT_REFRESH_EXPIRES_IN=7d
 
 ### 3. Start Services
 
-#### Start Elasticsearch (Docker - Recommended)
+#### Start MySQL (Docker - Recommended)
 
 ```bash
-docker run -d \
-  --name elasticsearch \
-  -p 9200:9200 \
-  -e "discovery.type=single-node" \
-  -e "xpack.security.enabled=false" \
-  elasticsearch:8.11.0
+docker compose up -d mysql
+# optional: watch logs until healthy
+docker compose logs -f mysql
 ```
 
-#### Start MySQL
+MySQL runs on `127.0.0.1:3306` with credentials matching `.env` (`DB_USER=trackifi`, `DB_PASSWORD=trackifi`, `DB_NAME=trackifi_dev`). Data is persisted in the `mysql_data` volume.
+
+#### Start Elasticsearch (Docker Compose)
 
 ```bash
-# Make sure MySQL is running
-mysql -u root -p
-CREATE DATABASE trackifi_dev;
+docker compose up -d elasticsearch
+# optional: watch logs until yellow/green
+docker compose logs -f elasticsearch
 ```
+
+Elasticsearch exposes `http://localhost:9200` with security disabled for local development and data persisted in the `es_data` volume.
 
 ### 4. Setup Database & Search Index
 
@@ -245,6 +247,8 @@ POST /api/auth/reset-password   # Reset password with token
 ```http
 GET  /api/user/profile          # Get user profile (protected)
 PUT  /api/user/profile          # Update user profile (protected)
+PATCH /api/user/profile/password# Change password (protected)
+DELETE /api/user/profile        # Deactivate account (protected)
 ```
 
 #### Products

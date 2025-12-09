@@ -100,6 +100,10 @@ const User = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
   },
   {
     timestamps: true, // tự động thêm createdAt và updatedAt

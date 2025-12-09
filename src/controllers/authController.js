@@ -139,6 +139,14 @@ const login = async (req, res) => {
       });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: "Tài khoản đã bị vô hiệu hóa",
+        errorCode: "ACCOUNT_DISABLED",
+      });
+    }
+
     // Kiểm tra password
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
@@ -220,6 +228,14 @@ const refreshToken = async (req, res) => {
         success: false,
         message: "Refresh token không hợp lệ",
         errorCode: "INVALID_REFRESH_TOKEN",
+      });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: "Tài khoản đã bị vô hiệu hóa",
+        errorCode: "ACCOUNT_DISABLED",
       });
     }
 
@@ -306,10 +322,10 @@ const getProfile = async (req, res) => {
       },
     });
 
-    if (!user) {
+    if (!user || user.isActive === false) {
       return res.status(404).json({
         success: false,
-        message: "User không tồn tại",
+        message: "User không tồn tại hoặc đã bị vô hiệu hóa",
         errorCode: "USER_NOT_FOUND",
       });
     }
@@ -348,10 +364,10 @@ const updateProfile = async (req, res) => {
 
     // Update user
     const user = await User.findByPk(userId);
-    if (!user) {
+    if (!user || user.isActive === false) {
       return res.status(404).json({
         success: false,
-        message: "User không tồn tại",
+        message: "User không tồn tại hoặc đã bị vô hiệu hóa",
         errorCode: "USER_NOT_FOUND",
       });
     }
@@ -513,6 +529,113 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Change Password API
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "currentPassword và newPassword là bắt buộc",
+        errorCode: "REQUIRED_FIELDS_MISSING",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "newPassword phải có ít nhất 6 ký tự",
+        errorCode: "PASSWORD_TOO_SHORT",
+      });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user || user.isActive === false) {
+      return res.status(404).json({
+        success: false,
+        message: "User không tồn tại hoặc đã bị vô hiệu hóa",
+        errorCode: "USER_NOT_FOUND",
+      });
+    }
+
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu hiện tại không đúng",
+        errorCode: "INVALID_CURRENT_PASSWORD",
+      });
+    }
+
+    const isSameAsOld = await user.comparePassword(newPassword);
+    if (isSameAsOld) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu mới phải khác mật khẩu hiện tại",
+        errorCode: "PASSWORD_NOT_CHANGED",
+      });
+    }
+
+    await user.update({
+      password: newPassword,
+      refreshToken: null, // force logout on other devices
+    });
+
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({
+      success: true,
+      message: "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi đổi mật khẩu",
+      errorCode: "CHANGE_PASSWORD_ERROR",
+    });
+  }
+};
+
+// Deactivate/Delete Profile API
+const deactivateAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User không tồn tại",
+        errorCode: "USER_NOT_FOUND",
+      });
+    }
+
+    await user.update({
+      isActive: false,
+      refreshToken: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    });
+
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({
+      success: true,
+      message: "Tài khoản đã được vô hiệu hóa",
+    });
+  } catch (error) {
+    console.error("Deactivate account error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi vô hiệu hóa tài khoản",
+      errorCode: "DEACTIVATE_ACCOUNT_ERROR",
+    });
+  }
+};
+
 const authController = {
   register,
   login,
@@ -520,6 +643,8 @@ const authController = {
   logout,
   getProfile,
   updateProfile,
+  changePassword,
+  deactivateAccount,
   forgotPassword,
   resetPassword,
 };

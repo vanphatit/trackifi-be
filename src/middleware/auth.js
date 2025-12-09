@@ -20,10 +20,10 @@ const authenticateToken = async (req, res, next) => {
 
     // Tìm user trong database
     const user = await User.findByPk(decoded.userId);
-    if (!user) {
+    if (!user || user.isActive === false) {
       return res.status(401).json({
         success: false,
-        message: "User không tồn tại",
+        message: "User không tồn tại hoặc đã bị vô hiệu hóa",
         errorCode: "USER_NOT_FOUND",
       });
     }
@@ -97,7 +97,7 @@ const optionalAuth = async (req, res, next) => {
       const decoded = verifyAccessToken(token);
       const user = await User.findByPk(decoded.userId);
 
-      if (user) {
+      if (user && user.isActive !== false) {
         req.user = {
           id: user.id,
           email: user.email,

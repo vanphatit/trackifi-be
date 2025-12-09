@@ -47,6 +47,10 @@ const Order = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
+    recipientName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
     shippingAddress: {
       type: DataTypes.TEXT,
       allowNull: false,

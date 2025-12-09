@@ -6,6 +6,9 @@ import categoryController from "../controllers/categoryController";
 import orderController from "../controllers/orderController";
 import userController from "../controllers/userController";
 import searchController from "../controllers/searchController";
+import reviewController from "../controllers/reviewController";
+import wishlistController from "../controllers/wishlistController";
+import adminController from "../controllers/adminController";
 import {
   authenticateToken,
   requireRole,
@@ -48,6 +51,29 @@ let initWebRoutes = (app) => {
     "/api/user/profile",
     authenticateToken,
     authController.updateProfile
+  );
+  router.patch(
+    "/api/user/profile/password",
+    authenticateToken,
+    authController.changePassword
+  );
+  router.delete(
+    "/api/user/profile",
+    authenticateToken,
+    authController.deactivateAccount
+  );
+
+  // Wishlist routes
+  router.get("/api/wishlist", authenticateToken, wishlistController.getWishlist);
+  router.post(
+    "/api/wishlist",
+    authenticateToken,
+    wishlistController.addToWishlist
+  );
+  router.delete(
+    "/api/wishlist/:productId",
+    authenticateToken,
+    wishlistController.removeFromWishlist
   );
 
   // Category routes
@@ -92,6 +118,7 @@ let initWebRoutes = (app) => {
   router.get("/api/search/filters", searchController.getSearchFilters);
 
   // Product routes
+  router.get("/api/products/best-sellers", productController.getBestSellers);
   router.get("/api/products", optionalAuth, productController.getProducts);
   router.get(
     "/api/products/:productId",
@@ -118,6 +145,22 @@ let initWebRoutes = (app) => {
     requireRole([ROLES.ADMIN]),
     syncProductToElasticsearch("delete"),
     productController.deleteProduct
+  );
+
+  // Review routes
+  router.get(
+    "/api/products/:productId/reviews",
+    reviewController.getProductReviews
+  );
+  router.post(
+    "/api/products/:productId/reviews",
+    authenticateToken,
+    reviewController.createReview
+  );
+  router.delete(
+    "/api/reviews/:reviewId",
+    authenticateToken,
+    reviewController.deleteReview
   );
 
   // Order routes
@@ -158,6 +201,14 @@ let initWebRoutes = (app) => {
     authenticateToken,
     requireRole([ROLES.ADMIN]),
     userController.updateUserRole
+  );
+
+  // Admin Dashboard Stats
+  router.get(
+    "/api/admin/stats/dashboard",
+    authenticateToken,
+    requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    adminController.getDashboardStats
   );
 
   // Legacy routes (giữ lại để tương thích)
