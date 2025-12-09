@@ -10,6 +10,7 @@ import {
   GraphQLNonNull,
 } from "graphql";
 import db from "../models/index.js";
+import { getProductStatistics } from "../utils/productStatistics.js";
 
 // Define Product Type
 const ProductType = new GraphQLObjectType({
@@ -32,6 +33,20 @@ const ProductType = new GraphQLObjectType({
           }
         }
         return parent.images;
+      },
+    },
+    totalBuyers: {
+      type: GraphQLInt,
+      resolve: async (parent) => {
+        const stats = await getProductStatistics(parent.id);
+        return stats.totalBuyers;
+      },
+    },
+    totalComments: {
+      type: GraphQLInt,
+      resolve: async (parent) => {
+        const stats = await getProductStatistics(parent.id);
+        return stats.totalComments;
       },
     },
   }),
@@ -235,10 +250,10 @@ const Mutation = new GraphQLObjectType({
             }
           );
         } else {
-           // If no IDs provided, perhaps user wants to toggle ALL?
-           // Let's implementing "select all" if list is empty for convenience, or just return cart.
-           // The prompt says "select specific items", but standard cart UX often needs "select all".
-           // I'll implement: if itemIds is present, update them.
+          // If no IDs provided, perhaps user wants to toggle ALL?
+          // Let's implementing "select all" if list is empty for convenience, or just return cart.
+          // The prompt says "select specific items", but standard cart UX often needs "select all".
+          // I'll implement: if itemIds is present, update them.
         }
 
         return cart;

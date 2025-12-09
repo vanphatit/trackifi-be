@@ -7,7 +7,7 @@ import viewEngine from "./config/viewEngine"; // nạp viewEngine
 import initWebRoutes from "./route/web"; // nạp file web từ Route
 import connectDB from "./config/database"; // import MySQL connection
 import "./models/index.js"; // ensure Sequelize associations are registered
-import { testConnection } from "./config/elasticsearch.js"; // import Elasticsearch connection
+import { testConnection, createProductIndex } from "./config/elasticsearch.js"; // import Elasticsearch connection
 import schema from "./graphql/schema.js";
 import { optionalAuth } from "./middleware/auth.js";
 
@@ -84,9 +84,17 @@ app.use((req, res) => {
 connectDB();
 
 // Test Elasticsearch connection (optional)
-testConnection().then((connected) => {
+testConnection().then(async (connected) => {
   if (connected) {
     console.log("🔍 Search features available");
+
+    // Create product index if it doesn't exist
+    try {
+      await createProductIndex();
+      console.log("✅ Elasticsearch index ready");
+    } catch (error) {
+      console.log("⚠️  Failed to create Elasticsearch index:", error.message);
+    }
   } else {
     console.log("⚠️  Search features disabled (Elasticsearch not available)");
     console.log(

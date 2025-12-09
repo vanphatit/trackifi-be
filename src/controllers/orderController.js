@@ -3,6 +3,8 @@ import Order, { ORDER_STATUSES } from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import Cart from "../models/Cart.js";
+import CartItem from "../models/CartItem.js";
 import { sequelize } from "../config/database.js";
 import { ROLES } from "../constants/roles.js";
 
@@ -114,7 +116,9 @@ const createOrder = async (req, res) => {
       where: { id: productIds },
     });
 
-    const productMap = new Map(products.map((product) => [product.id, product]));
+    const productMap = new Map(
+      products.map((product) => [product.id, product])
+    );
     const missingProduct = normalizedItems.find(
       (item) => !productMap.has(item.productId)
     );
@@ -207,6 +211,24 @@ const createOrder = async (req, res) => {
         product.stock -= item.quantity;
         product.soldCount += item.quantity;
         await product.save({ transaction });
+      }
+
+      // Clear ordered items from cart
+      const userCart = await Cart.findOne({
+        where: { userId: req.user.id },
+        transaction,
+      });
+
+      if (userCart) {
+        const orderedProductIds = normalizedItems.map((item) => item.productId);
+        await CartItem.destroy({
+          where: {
+            cartId: userCart.id,
+            productId: orderedProductIds,
+            isSelected: true,
+          },
+          transaction,
+        });
       }
 
       await transaction.commit();

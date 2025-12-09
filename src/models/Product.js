@@ -87,6 +87,35 @@ const Product = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    totalBuyers: {
+      type: DataTypes.VIRTUAL,
+      async get() {
+        // Lazy load: calculate when accessed
+        if (!this.getDataValue("totalBuyers")) {
+          const { sequelize } = require("../config/database.js");
+          const result = await sequelize.query(
+            `SELECT COUNT(DISTINCT o.userId) as count 
+             FROM orders o 
+             JOIN order_items oi ON o.id = oi.orderId 
+             WHERE oi.productId = :productId 
+             AND o.status IN ('COMPLETED', 'SHIPPED')`,
+            {
+              replacements: { productId: this.id },
+              type: sequelize.QueryTypes.SELECT,
+            }
+          );
+          return result[0]?.count || 0;
+        }
+        return this.getDataValue("totalBuyers");
+      },
+    },
+    totalComments: {
+      type: DataTypes.VIRTUAL,
+      async get() {
+        // Use ratingCount as it represents total reviews/comments
+        return this.ratingCount || 0;
+      },
+    },
   },
   {
     tableName: "products",

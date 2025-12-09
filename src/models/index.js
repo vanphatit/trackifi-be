@@ -8,6 +8,7 @@ import Cart from "./Cart.js";
 import CartItem from "./CartItem.js";
 import Review from "./Review.js";
 import Wishlist from "./Wishlist.js";
+import RecentlyViewed from "./RecentlyViewed.js";
 
 // Product <-> Category
 Category.hasMany(Product, { foreignKey: "categoryId", as: "products" });
@@ -53,6 +54,17 @@ Wishlist.belongsTo(User, { foreignKey: "userId", as: "user" });
 Product.hasMany(Wishlist, { foreignKey: "productId", as: "wishlistEntries" });
 Wishlist.belongsTo(Product, { foreignKey: "productId", as: "product" });
 
+// User <-> RecentlyViewed
+User.hasMany(RecentlyViewed, {
+  foreignKey: "userId",
+  as: "recentlyViewedItems",
+});
+RecentlyViewed.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+// Product <-> RecentlyViewed
+Product.hasMany(RecentlyViewed, { foreignKey: "productId", as: "viewHistory" });
+RecentlyViewed.belongsTo(Product, { foreignKey: "productId", as: "product" });
+
 const db = {
   User,
   Category,
@@ -63,6 +75,7 @@ const db = {
   CartItem,
   Review,
   Wishlist,
+  RecentlyViewed,
   ORDER_STATUSES,
 };
 

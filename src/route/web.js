@@ -8,6 +8,7 @@ import userController from "../controllers/userController";
 import searchController from "../controllers/searchController";
 import reviewController from "../controllers/reviewController";
 import wishlistController from "../controllers/wishlistController";
+import recentlyViewedController from "../controllers/recentlyViewedController";
 import adminController from "../controllers/adminController";
 import {
   authenticateToken,
@@ -22,6 +23,47 @@ import {
 import { syncProductToElasticsearch } from "../middleware/elasticsearchSync";
 import { ROLES } from "../constants/roles.js";
 
+// Import validators
+import {
+  validateRegister,
+  validateLogin,
+  validateForgotPassword,
+  validateResetPassword,
+  validateChangePassword,
+  validateUpdateProfile,
+} from "../middleware/validators/authValidator.js";
+import {
+  validateCreateProduct,
+  validateUpdateProduct,
+  validateProductId,
+  validateGetProduct,
+} from "../middleware/validators/productValidator.js";
+import {
+  validateCreateCategory,
+  validateUpdateCategory,
+  validateCategoryId,
+} from "../middleware/validators/categoryValidator.js";
+import {
+  validateCreateOrder,
+  validateUpdateOrderStatus,
+  validateOrderId,
+} from "../middleware/validators/orderValidator.js";
+import {
+  validateCreateReview,
+  validateUpdateReview,
+  validateReviewId,
+  validateGetProductReviews,
+} from "../middleware/validators/reviewValidator.js";
+import {
+  validateSearchProducts,
+  validateGetRelatedProducts,
+  validateAutocomplete,
+} from "../middleware/validators/searchValidator.js";
+import {
+  validateAddToWishlist,
+  validateRemoveFromWishlist,
+} from "../middleware/validators/wishlistValidator.js";
+
 let router = express.Router(); // khởi tạo Route
 
 let initWebRoutes = (app) => {
@@ -34,27 +76,44 @@ let initWebRoutes = (app) => {
   });
 
   // Authentication routes
-  router.post("/api/auth/register", authLimiter, authController.register);
-  router.post("/api/auth/login", authLimiter, authController.login);
+  router.post(
+    "/api/auth/register",
+    authLimiter,
+    validateRegister,
+    authController.register
+  );
+  router.post(
+    "/api/auth/login",
+    authLimiter,
+    validateLogin,
+    authController.login
+  );
   router.post("/api/auth/refresh-token", authController.refreshToken);
   router.post("/api/auth/logout", authenticateToken, authController.logout);
   router.post(
     "/api/auth/forgot-password",
     forgotPasswordLimiter,
+    validateForgotPassword,
     authController.forgotPassword
   );
-  router.post("/api/auth/reset-password", authController.resetPassword);
+  router.post(
+    "/api/auth/reset-password",
+    validateResetPassword,
+    authController.resetPassword
+  );
 
   // User profile routes (protected)
   router.get("/api/user/profile", authenticateToken, authController.getProfile);
   router.put(
     "/api/user/profile",
     authenticateToken,
+    validateUpdateProfile,
     authController.updateProfile
   );
   router.patch(
     "/api/user/profile/password",
     authenticateToken,
+    validateChangePassword,
     authController.changePassword
   );
   router.delete(
@@ -64,16 +123,39 @@ let initWebRoutes = (app) => {
   );
 
   // Wishlist routes
-  router.get("/api/wishlist", authenticateToken, wishlistController.getWishlist);
+  router.get(
+    "/api/wishlist",
+    authenticateToken,
+    wishlistController.getWishlist
+  );
   router.post(
     "/api/wishlist",
     authenticateToken,
+    validateAddToWishlist,
     wishlistController.addToWishlist
   );
   router.delete(
     "/api/wishlist/:productId",
     authenticateToken,
+    validateRemoveFromWishlist,
     wishlistController.removeFromWishlist
+  );
+
+  // Recently Viewed routes
+  router.post(
+    "/api/recently-viewed",
+    authenticateToken,
+    recentlyViewedController.trackView
+  );
+  router.get(
+    "/api/recently-viewed",
+    authenticateToken,
+    recentlyViewedController.getRecentlyViewed
+  );
+  router.delete(
+    "/api/recently-viewed",
+    authenticateToken,
+    recentlyViewedController.clearRecentlyViewed
   );
 
   // Category routes
@@ -82,18 +164,21 @@ let initWebRoutes = (app) => {
     "/api/categories",
     authenticateToken,
     requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    validateCreateCategory,
     categoryController.createCategory
   );
   router.put(
     "/api/categories/:categoryId",
     authenticateToken,
     requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    validateUpdateCategory,
     categoryController.updateCategory
   );
   router.delete(
     "/api/categories/:categoryId",
     authenticateToken,
     requireRole([ROLES.ADMIN]),
+    validateCategoryId,
     categoryController.deleteCategory
   );
 
@@ -101,14 +186,17 @@ let initWebRoutes = (app) => {
   router.post(
     "/api/search/products",
     optionalAuth,
+    validateSearchProducts,
     searchController.searchProducts
   );
   router.get(
     "/api/search/autocomplete",
+    validateAutocomplete,
     searchController.getAutocompleteSuggestions
   );
   router.get(
     "/api/search/related/:productId",
+    validateGetRelatedProducts,
     searchController.getRelatedProducts
   );
   router.get(
@@ -123,12 +211,14 @@ let initWebRoutes = (app) => {
   router.get(
     "/api/products/:productId",
     optionalAuth,
+    validateGetProduct,
     productController.getProductById
   );
   router.post(
     "/api/products",
     authenticateToken,
     requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    validateCreateProduct,
     syncProductToElasticsearch("create"),
     productController.createProduct
   );
@@ -136,6 +226,7 @@ let initWebRoutes = (app) => {
     "/api/products/:productId",
     authenticateToken,
     requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    validateUpdateProduct,
     syncProductToElasticsearch("update"),
     productController.updateProduct
   );
@@ -143,6 +234,7 @@ let initWebRoutes = (app) => {
     "/api/products/:productId",
     authenticateToken,
     requireRole([ROLES.ADMIN]),
+    validateProductId,
     syncProductToElasticsearch("delete"),
     productController.deleteProduct
   );
@@ -150,16 +242,19 @@ let initWebRoutes = (app) => {
   // Review routes
   router.get(
     "/api/products/:productId/reviews",
+    validateGetProductReviews,
     reviewController.getProductReviews
   );
   router.post(
     "/api/products/:productId/reviews",
     authenticateToken,
+    validateCreateReview,
     reviewController.createReview
   );
   router.delete(
     "/api/reviews/:reviewId",
     authenticateToken,
+    validateReviewId,
     reviewController.deleteReview
   );
 
@@ -168,6 +263,7 @@ let initWebRoutes = (app) => {
     "/api/orders",
     authenticateToken,
     requireRole([ROLES.CUSTOMER, ROLES.ADMIN, ROLES.SUPPORTER]),
+    validateCreateOrder,
     orderController.createOrder
   );
   router.get("/api/orders/my", authenticateToken, orderController.getMyOrders);
@@ -180,12 +276,14 @@ let initWebRoutes = (app) => {
   router.get(
     "/api/orders/:orderId",
     authenticateToken,
+    validateOrderId,
     orderController.getOrderDetail
   );
   router.patch(
     "/api/orders/:orderId/status",
     authenticateToken,
     requireRole([ROLES.ADMIN, ROLES.SUPPORTER]),
+    validateUpdateOrderStatus,
     orderController.updateOrderStatus
   );
 

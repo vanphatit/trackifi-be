@@ -1,6 +1,7 @@
 import connectDB from "../config/database.js";
 import { testConnection } from "../config/elasticsearch.js";
 import ElasticsearchService from "../services/ElasticsearchService.js";
+import "../models/index.js"; // Import to initialize associations
 
 const reindexProducts = async () => {
   try {

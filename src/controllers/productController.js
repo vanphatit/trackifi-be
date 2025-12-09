@@ -5,6 +5,7 @@ import Category from "../models/Category.js";
 import OrderItem from "../models/OrderItem.js";
 import { ROLES } from "../constants/roles.js";
 import { slugify } from "../utils/slugify.js";
+import { attachProductStatistics } from "../utils/productStatistics.js";
 
 const parseNumber = (value) => {
   if (value === undefined || value === null || value === "") {
@@ -334,7 +335,10 @@ const getProductById = async (req, res) => {
       ],
     });
 
-    if (!product || (!product.isActive && (!req.user || req.user.roleId === ROLES.CUSTOMER))) {
+    if (
+      !product ||
+      (!product.isActive && (!req.user || req.user.roleId === ROLES.CUSTOMER))
+    ) {
       return res.status(404).json({
         success: false,
         message: "Sản phẩm không tồn tại",
@@ -342,10 +346,13 @@ const getProductById = async (req, res) => {
       });
     }
 
+    // Attach statistics (total buyers and total comments)
+    const productWithStats = await attachProductStatistics(product);
+
     return res.status(200).json({
       success: true,
       message: "Lấy chi tiết sản phẩm thành công",
-      data: product,
+      data: productWithStats,
     });
   } catch (error) {
     console.error("Get product detail error:", error);
@@ -458,9 +465,7 @@ const updateProduct = async (req, res) => {
     if (specs !== undefined && typeof specs === "object") product.specs = specs;
     if (images !== undefined) {
       const updatedImages = normalizeImages(images);
-      product.images = updatedImages.length
-        ? updatedImages
-        : product.images;
+      product.images = updatedImages.length ? updatedImages : product.images;
     }
     if (isActive !== undefined)
       product.isActive = normalizeBoolean(isActive, product.isActive);
