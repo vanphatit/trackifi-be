@@ -54,13 +54,15 @@ export const validateSearchProducts = [
     .optional()
     .isIn([
       "relevance",
-      "price-asc",
-      "price-desc",
-      "name-asc",
-      "name-desc",
+      "price_asc",
+      "price_desc",
+      "name_asc",
+      "name_desc",
       "rating",
       "newest",
-      "bestseller",
+      "oldest",
+      "popular",
+      "stock",
     ])
     .withMessage("Tiêu chí sắp xếp không hợp lệ"),
 
